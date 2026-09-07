@@ -1,9 +1,7 @@
 terraform {
   required_version = ">= 1.9"
 
-  # State is stored in the GitLab-managed Terraform state backend of this
-  # project (WhiteMuush/simplon-azure-k8s-gitops, id 86169287). Credentials are
-  # injected at runtime, so nothing secret is committed here.
+  # GitLab-managed state. Credentials come from the environment at runtime.
   backend "http" {
     address        = "https://gitlab.com/api/v4/projects/86169287/terraform/state/storage"
     lock_address   = "https://gitlab.com/api/v4/projects/86169287/terraform/state/storage/lock"

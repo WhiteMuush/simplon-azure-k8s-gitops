@@ -1,4 +1,3 @@
-# Corporate file share mounted by employees over SMB
 resource "azurerm_storage_share" "documents" {
   name               = "documents"
   storage_account_id = azurerm_storage_account.files.id
