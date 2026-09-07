@@ -2,13 +2,16 @@
 
 STACK ?=
 
-.PHONY: help stacks init fmt validate plan apply destroy output clean
+.PHONY: help stacks status init fmt validate plan apply destroy output clean
 
 help: ## Show this help
 	@scripts/help.sh
 
 stacks: ## List the available stacks
 	@scripts/stacks.sh
+
+status: ## Show what is deployed, per stack and in Azure
+	@scripts/status.sh
 
 init: ## Initialize the backend and download providers
 	@scripts/tf.sh init "$(STACK)"

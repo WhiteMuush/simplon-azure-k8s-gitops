@@ -15,6 +15,11 @@ die() {
   exit 1
 }
 
+step()  { printf '\n\033[1m%s\033[0m\n' "$*"; }
+ok()    { printf '  \033[32m✓\033[0m %s\n' "$*"; }
+warn()  { printf '  \033[33m!\033[0m %s\n' "$*"; }
+field() { printf '  %-16s %s\n' "$1" "$2"; }
+
 list_stacks() {
   [ -d "$TERRAFORM_DIR" ] || die "No terraform/ directory at the project root."
   find "$TERRAFORM_DIR" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort
