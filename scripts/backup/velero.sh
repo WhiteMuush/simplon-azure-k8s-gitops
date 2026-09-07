@@ -149,17 +149,38 @@ restore() {
   kubectl delete namespace "$DEMO_NAMESPACE" --wait >/dev/null
   ok "namespace ${DEMO_NAMESPACE} deleted"
 
+  local name
+  name="restore-$(date -u '+%Y%m%d-%H%M%S')"
   kubectl -n "$NAMESPACE" create -f - >/dev/null <<EOF
 apiVersion: velero.io/v1
 kind: Restore
 metadata:
-  name: restore-$(date -u '+%Y%m%d-%H%M%S')
+  name: ${name}
   namespace: ${NAMESPACE}
 spec:
   backupName: ${latest}
 EOF
+  wait_for_restore "$name"
   kubectl -n "$DEMO_NAMESPACE" rollout status deployment/notes --timeout=300s
   seed_check
+}
+
+wait_for_restore() {
+  local name="$1" phase=""
+  for _ in $(seq 1 60); do
+    phase="$(kubectl -n "$NAMESPACE" get restore "$name" -o jsonpath='{.status.phase}' 2>/dev/null)"
+    case "$phase" in
+      Completed)
+        ok "restore Completed"
+        return 0
+        ;;
+      Failed | PartiallyFailed)
+        die "restore ended in phase ${phase}. Details: kubectl -n ${NAMESPACE} describe restore ${name}"
+        ;;
+    esac
+    sleep 5
+  done
+  warn "still in phase ${phase:-unknown} after 5 minutes"
 }
 
 seed_check() {
