@@ -1,0 +1,31 @@
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Secrets and credentials
+*.tfvars
+!example.tfvars
+*.pem
+*.key
+*.pfx
+.env
+.env.*
+kubeconfig
+*.kubeconfig
+
+# OS
+.DS_Store
+Thumbs.db
