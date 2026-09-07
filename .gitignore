@@ -3,21 +3,42 @@
 .vscode/
 *.iml
 
-# Terraform
-.terraform/
-.terraform.lock.hcl
+# Terraform: local working directory and provider binaries
+**/.terraform/*
+.terraformrc
+terraform.rc
+
+# Terraform: state files, always stored in the remote backend
 *.tfstate
 *.tfstate.*
+*.tfstate.backup
+.terraform.tfstate.lock.info
+
+# Terraform: plan output, may contain secret values in clear text
 *.tfplan
+*.tfplan.*
+plan.out
+plan.json
+
+# Terraform: crash logs
 crash.log
+crash.*.log
+
+# Terraform: variable files, may contain credentials
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+
+# Terraform: local overrides, meant for one machine only
 override.tf
 override.tf.json
 *_override.tf
 *_override.tf.json
 
+# Terraform: CLI configuration with credentials
+.terraform.d/
+
 # Secrets and credentials
-*.tfvars
-!example.tfvars
 *.pem
 *.key
 *.pfx
@@ -25,6 +46,7 @@ override.tf.json
 .env.*
 kubeconfig
 *.kubeconfig
+azure.json
 
 # OS
 .DS_Store
