@@ -1,0 +1,43 @@
+initContainers:
+  - name: velero-plugin-for-microsoft-azure
+    image: velero/velero-plugin-for-microsoft-azure:v1.14.2
+    imagePullPolicy: IfNotPresent
+    volumeMounts:
+      - mountPath: /target
+        name: plugins
+
+# Workload identity replaces the credentials file: the pod exchanges a projected
+# token for an Azure one, so no secret exists in the cluster.
+credentials:
+  useSecret: false
+
+podLabels:
+  azure.workload.identity/use: "true"
+
+serviceAccount:
+  server:
+    create: true
+    name: velero
+
+configuration:
+  backupStorageLocation:
+    - name: default
+      provider: azure
+      bucket: velero
+      default: true
+      config:
+        resourceGroup: mpetitRG
+        storageAccount: mpfilesprod2026
+        useAAD: "true"
+
+  volumeSnapshotLocation: []
+
+  # File system backup sends volume data to the same container, so the identity
+  # needs no permission on disks or snapshots.
+  defaultVolumesToFsBackup: true
+
+deployNodeAgent: true
+
+nodeAgent:
+  podLabels:
+    azure.workload.identity/use: "true"

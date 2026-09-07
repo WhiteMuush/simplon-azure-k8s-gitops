@@ -23,3 +23,18 @@ output "aks_admin_group_object_id" {
   value       = azuread_group.aks_admins.object_id
   description = "Object ID of the Entra ID group holding cluster administrators"
 }
+
+output "velero_identity_client_id" {
+  value       = azurerm_user_assigned_identity.velero.client_id
+  description = "Client ID annotated on the Velero service account"
+}
+
+output "velero_backup_storage_account" {
+  value       = data.terraform_remote_state.storage.outputs.storage_account_name
+  description = "Storage account holding the backup container"
+}
+
+output "velero_backup_container" {
+  value       = data.terraform_remote_state.storage.outputs.velero_container_name
+  description = "Blob container Velero writes backups to"
+}

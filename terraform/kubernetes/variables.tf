@@ -27,19 +27,12 @@ variable "node_count" {
   default     = 2
 }
 
-# Three independent gates decide what is deployable here, and all three had to
-# be checked: the Azure Policy allow list, the SKU availability per zone, and
-# the family quota. Standard_D2_v3 is the only size that clears all three with
-# room to grow. Standard_D2s_v3 also clears them but its family has 2 vCPU left,
-# which caps the cluster at a single node.
 variable "node_vm_size" {
   description = "VM size of the system pool. Must be allowed by policy, available in the zone, and within the family quota."
   type        = string
   default     = "Standard_D2_v3"
 }
 
-# Zone 3 is NotAvailableForSubscription for this SKU in francecentral. Pinning
-# the pool to zones 1 and 2 keeps AKS away from it.
 variable "node_zones" {
   description = "Availability zones the system pool may use."
   type        = list(string)
@@ -59,4 +52,22 @@ variable "tags" {
     environment = "production"
     managed_by  = "terraform"
   }
+}
+
+variable "velero_identity_name" {
+  description = "User assigned identity Velero uses to write backups."
+  type        = string
+  default     = "velero"
+}
+
+variable "velero_namespace" {
+  description = "Namespace Velero runs in."
+  type        = string
+  default     = "velero"
+}
+
+variable "velero_service_account" {
+  description = "Service account Velero runs as, federated to the identity."
+  type        = string
+  default     = "velero"
 }
