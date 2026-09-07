@@ -5,30 +5,45 @@
 # shellcheck source=scripts/lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-action="${1:-}"
-[ -n "$action" ] || die "Usage: $0 <init|validate|plan|apply|destroy|output> [stack]"
-
-resolve_stack "${2:-}"
-echo "==> stack: ${STACK_NAME}"
-load_env
+USAGE="Usage: $0 <init|validate|plan|apply|destroy|output> [stack]"
 
 tf() {
   terraform -chdir="${TERRAFORM_DIR}/${STACK_NAME}" "$@"
 }
 
-# Every action that reaches a remote gets a fresh init first.
-prepare() {
+# Everything an action needs before it can touch a remote: a fresh backend, a
+# formatted tree, and a configuration that parses.
+prepare_stack() {
   tf init -reconfigure
   terraform fmt -recursive "$TERRAFORM_DIR"
   tf validate
 }
 
-case "$action" in
-  init)     tf init -reconfigure ;;
-  validate) tf validate ;;
-  plan)     prepare && tf plan ;;
-  apply)    prepare && tf apply ;;
-  destroy)  tf destroy ;;
-  output)   tf output ;;
-  *)        die "Unknown action '${action}'." ;;
-esac
+select_stack() {
+  local requested="${1:-}"
+  resolve_stack "$requested"
+  echo "==> stack: ${STACK_NAME}"
+  load_env
+}
+
+run_action() {
+  local action="$1"
+  case "$action" in
+    init) tf init -reconfigure ;;
+    validate) tf validate ;;
+    plan) prepare_stack && tf plan ;;
+    apply) prepare_stack && tf apply ;;
+    destroy) tf destroy ;;
+    output) tf output ;;
+    *) die "Unknown action '${action}'. ${USAGE}" ;;
+  esac
+}
+
+main() {
+  local action="${1:-}"
+  [ -n "$action" ] || die "$USAGE"
+  select_stack "${2:-}"
+  run_action "$action"
+}
+
+main "$@"
