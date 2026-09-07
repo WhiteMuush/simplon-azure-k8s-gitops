@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Run a Terraform action against one stack.
-# Usage: scripts/tf.sh <init|validate|plan|apply|destroy|output> [stack]
+# Usage: scripts/terraform/tf.sh <init|validate|plan|apply|destroy|output> [stack]
 
 # shellcheck source=scripts/lib.sh
-source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib.sh"
 
 USAGE="Usage: $0 <init|validate|plan|apply|destroy|output> [stack]"
 
@@ -11,8 +11,6 @@ tf() {
   terraform -chdir="${TERRAFORM_DIR}/${STACK_NAME}" "$@"
 }
 
-# Everything an action needs before it can touch a remote: a fresh backend, a
-# formatted tree, and a configuration that parses.
 prepare_stack() {
   tf init -reconfigure
   terraform fmt -recursive "$TERRAFORM_DIR"

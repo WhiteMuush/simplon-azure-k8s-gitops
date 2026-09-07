@@ -27,7 +27,7 @@ output "mount_commands" {
   value = {
     windows = "net use Z: \\\\${replace(local.smb_path, "/", "\\")}"
     macos   = "open smb://${local.smb_path}"
-    linux   = "az login && STORAGE_ACCOUNT=${azurerm_storage_account.files.name} SHARE_NAME=${azurerm_storage_share.documents.name} scripts/mount-file-share.sh"
+    linux   = "az login && STORAGE_ACCOUNT=${azurerm_storage_account.files.name} SHARE_NAME=${azurerm_storage_share.documents.name} scripts/storage/mount-file-share.sh"
   }
   description = "Commands employees run to mount the share, none of which carry a credential. Windows and macOS present an Entra ID Kerberos ticket over SMB, which needs an Entra joined device or Platform SSO. Linux has no Entra Kerberos client, so it trades the token for a Kerberos ticket through SMB OAuth instead. See the wiki page Mounting the file share on Linux."
 }
@@ -42,8 +42,6 @@ output "velero_container_name" {
   description = "Blob container Velero writes backups to"
 }
 
-# RBAC scope for the Velero identity. Narrower than the storage account, so the
-# backup identity cannot read the corporate file share.
 output "velero_container_id" {
   value       = "${azurerm_storage_account.files.id}/blobServices/default/containers/${azurerm_storage_container.velero.name}"
   description = "Resource ID of the Velero container, used as the RBAC scope"

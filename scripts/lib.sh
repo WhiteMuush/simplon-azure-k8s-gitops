@@ -7,7 +7,6 @@ PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TERRAFORM_DIR="${PROJECT_ROOT}/terraform"
 ENV_FILE="${PROJECT_ROOT}/.env"
 
-# Set by resolve_stack, read by the callers.
 export STACK_NAME=""
 
 die() {
@@ -25,8 +24,7 @@ list_stacks() {
   find "$TERRAFORM_DIR" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort
 }
 
-# Set STACK_NAME to the stack to act on. Uses $1 when given, the only stack
-# when there is one, and asks otherwise. Refuses to guess outside a terminal.
+# Sets STACK_NAME. Refuses to guess outside a terminal.
 resolve_stack() {
   local requested="${1:-}"
   local -a stacks

@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Show where every stack stands and what is actually running in Azure.
-# Read-only: it never plans, applies or changes anything.
+# Show where every stack stands and what is running in Azure. Read-only.
 #
 # Usage: scripts/status.sh
 
@@ -52,7 +51,6 @@ show_stack() {
   esac
 }
 
-# terraform state list needs an initialized backend, so init quietly first.
 count_state_resources() {
   local stack="$1"
   local dir="${TERRAFORM_DIR}/${stack}"
@@ -61,7 +59,7 @@ count_state_resources() {
       echo "unreachable"
       return
     }
-  # grep -c prints 0 and exits 1 on an empty state, so swallow the status.
+  # grep -c exits 1 on an empty state.
   terraform -chdir="$dir" state list 2>/dev/null | grep -c . || true
 }
 
@@ -85,7 +83,7 @@ show_storage_accounts() {
   return 0
 }
 
-# The power state matters for cost: a stopped cluster bills nothing for nodes.
+# A stopped cluster bills nothing for its nodes.
 show_clusters() {
   local rg="${RESOURCE_GROUP:-mpetitRG}"
   local clusters

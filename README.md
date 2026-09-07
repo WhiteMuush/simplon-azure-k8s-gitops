@@ -32,6 +32,8 @@ Credentials come from a `.env` file at the repository root, which is git-ignored
 
 ```
 terraform/    one directory per Terraform state
-scripts/      every Makefile target delegates here
+manifests/    Kubernetes manifests, applied to the cluster
+make/         one .mk file per domain, included by the Makefile
+scripts/      every Makefile target delegates here, grouped by domain
 docs/         the project brief
 ```
