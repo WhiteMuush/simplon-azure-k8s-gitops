@@ -1,22 +1,17 @@
 #!/usr/bin/env bash
 # Mount the Azure file share on Linux with the employee's own Entra ID token,
-# over real SMB, with no storage account key.
-#
-# The point of the experiment: check whether the plain "Storage File Data SMB
-# Share Contributor" role is enough. Microsoft documents this path for VMs and
-# applications and tells you to assign "Storage File Data SMB MI Admin", which
-# bypasses NTFS permissions. If the plain role works, Linux gets a
-# credential-free mount with NTFS still enforced.
+# over SMB, with no storage account key. See the wiki page
+# "Mounting the file share on Linux" for the mechanism.
 #
 # Usage:
-#   scripts/mount-file-share.sh --enable    turn on SMB OAuth, then mount
-#   scripts/mount-file-share.sh             mount
-#   scripts/mount-file-share.sh --diagnose  inspect the whole chain
-#   scripts/mount-file-share.sh --debug     retry with CIFS verbose logging
-#   scripts/mount-file-share.sh --cleanup   unmount and drop the cached credential
+#   scripts/storage/mount-file-share.sh --enable    turn on SMB OAuth, then mount
+#   scripts/storage/mount-file-share.sh             mount
+#   scripts/storage/mount-file-share.sh --diagnose  inspect the whole chain
+#   scripts/storage/mount-file-share.sh --debug     retry with CIFS verbose logging
+#   scripts/storage/mount-file-share.sh --cleanup   unmount and drop the cached credential
 
 # shellcheck source=scripts/lib.sh
-source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib.sh"
 
 STORAGE_ACCOUNT="${STORAGE_ACCOUNT:-mpfilesprod2026}"
 SHARE_NAME="${SHARE_NAME:-documents}"
@@ -30,17 +25,9 @@ KERBEROS_REALM="FILES.AZURE.STORAGE.MICROSOFT.COM"
 TOKEN_AUDIENCE="https://storage.azure.com"
 MOUNT_OPTIONS="dir_mode=0755,file_mode=0755,serverino,nosharesock,mfsymlinks,actimeo=30"
 
-# Set by the steps below, read by the ones after.
 OS_VERSION_ID=""
 ACCESS_TOKEN=""
 CRED_UID=""
-
-# ---------------------------------------------------------------- output ----
-
-step() { printf '\n\033[1m%s\033[0m\n' "$*"; }
-ok()   { printf '  \033[32m✓\033[0m %s\n' "$*"; }
-warn() { printf '  \033[33m!\033[0m %s\n' "$*"; }
-field() { printf '  %-14s %s\n' "$1" "$2"; }
 
 # ------------------------------------------------------------- preflight ----
 
@@ -58,8 +45,7 @@ check_supported_os() {
   esac
 }
 
-# az account show only reads the local cache, so it succeeds long after the
-# refresh token died. Force a real token request instead.
+# az account show only reads the local cache, so force a real token request.
 check_azure_session() {
   command -v az >/dev/null || die "The Azure CLI is missing."
   az account show >/dev/null 2>&1 || die "Not signed in. Run: az login"
@@ -88,8 +74,7 @@ query_smb_oauth_state() {
 }
 
 enable_smb_oauth() {
-  # The azurerm provider 5.4.0 has no attribute for this yet, hence the CLI.
-  # Move it to the azapi provider once the experiment succeeds.
+  # The azurerm provider has no attribute for this yet, hence the CLI.
   az storage account update \
     --resource-group "$RESOURCE_GROUP" --name "$STORAGE_ACCOUNT" \
     --enable-smb-oauth true --output none
@@ -134,8 +119,7 @@ install_cifs_utils() {
   ok "cifs-utils installed"
 }
 
-# cifs.upcall resolves the service ticket through the krb5 library. With no
-# krb5.conf there is no default_realm, so it cannot match the cached ticket.
+# Without a default_realm, cifs.upcall cannot match the cached ticket.
 ensure_krb5_conf() {
   if [ -f "$KRB5_CONF" ] && grep -q "default_realm" "$KRB5_CONF"; then
     ok "krb5 default realm set"
@@ -171,7 +155,7 @@ request_access_token() {
   assert_token_audience
 }
 
-# The audience must have no trailing slash, or the mount is refused.
+# A trailing slash in the audience makes the mount fail.
 assert_token_audience() {
   local aud
   aud="$(read_token_claim aud)"
@@ -214,7 +198,6 @@ read_ticket_expiry() {
 
 # --------------------------------------------------------------- mounting ----
 
-# azfilesauth writes the uid owning the credential cache as USER_UID.
 read_cruid_from_config() {
   sudo grep -oP '(?<=^USER_UID:)\s*\K\d+' "$CONFIG_FILE" 2>/dev/null || true
 }
@@ -230,7 +213,6 @@ prepare_mount_point() {
   ! mountpoint -q "$MOUNT_POINT" || die "${MOUNT_POINT} is already mounted."
 }
 
-# Returns non-zero on failure so callers decide whether to give up.
 try_mount() {
   sudo mount -t cifs "$UNC_PATH" "$MOUNT_POINT" \
     -o "sec=krb5,cruid=${CRED_UID},${MOUNT_OPTIONS}" 2>&1
@@ -248,7 +230,6 @@ mount_share() {
   ok "${UNC_PATH} -> ${MOUNT_POINT}"
 }
 
-# mount.cifs reports errno, and the two we care about mean different things.
 mount_failure_hint() {
   cat <<'HINT'
 Mount refused. Read the errno above:
@@ -273,7 +254,7 @@ print_summary() {
   local expiry
   expiry="$(read_ticket_expiry)"
   [ -n "$expiry" ] && field "Ticket until" "$expiry"
-  printf '\n  Unmount with: scripts/mount-file-share.sh --cleanup\n'
+  printf '\n  Unmount with: scripts/storage/mount-file-share.sh --cleanup\n'
 }
 
 read_capacity() {
@@ -321,7 +302,6 @@ show_token_claims() {
   done
 }
 
-# The kernel upcall reads this cache. Whatever it holds is what SMB presents.
 show_credential_cache() {
   step "Kerberos credential cache"
   resolve_credential_uid_quiet
@@ -333,8 +313,7 @@ show_credential_cache() {
   sudo klist -c "$cache" 2>&1 || warn "the cache could not be read"
 }
 
-# cifs.upcall logs to the journal. Its absence during a mount means the kernel
-# never invoked it, which is a different failure from a rejected ticket.
+# No cifs.upcall line during a mount means the kernel never invoked it.
 show_upcall_log() {
   step "cifs.upcall activity"
   sudo journalctl --since "$1" --no-pager 2>/dev/null |

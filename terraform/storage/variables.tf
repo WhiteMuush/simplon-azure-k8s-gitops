@@ -40,3 +40,9 @@ variable "tags" {
     managed_by  = "terraform"
   }
 }
+
+variable "velero_container_name" {
+  description = "Blob container holding the Kubernetes backups written by Velero."
+  type        = string
+  default     = "velero"
+}
