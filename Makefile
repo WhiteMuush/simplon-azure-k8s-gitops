@@ -2,6 +2,7 @@ STACK ?=
 
 include make/terraform.mk
 include make/kubernetes.mk
+include make/argocd.mk
 include make/velero.mk
 
 ##@ General
