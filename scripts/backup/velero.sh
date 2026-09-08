@@ -66,6 +66,9 @@ demo() {
   step "Deploying the demo namespace"
   require_tools
   require_cluster
+  # kubectl applies a directory in alphabetical order, so the namespace has to
+  # be created on its own before the objects that live in it.
+  kubectl apply -f "${MANIFESTS_DIR}/demo/namespace.yaml" >/dev/null
   kubectl apply -f "${MANIFESTS_DIR}/demo/" >/dev/null
   kubectl -n "$DEMO_NAMESPACE" rollout status deployment/notes --timeout=180s
   seed_demo_data
