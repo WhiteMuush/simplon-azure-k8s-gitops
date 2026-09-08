@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: demo
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://gitlab.com/WhiteMuush/simplon-azure-k8s-gitops.git
+    targetRevision: feat/setup-k8s
+    path: manifests/demo
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: demo
+  syncPolicy:
+    automated:
+      selfHeal: true
+      # A Velero restore recreates objects Argo CD would delete as stale.
+      prune: false
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
