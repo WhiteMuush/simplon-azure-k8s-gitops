@@ -43,7 +43,7 @@ install_kubelogin() {
 fetch_credentials() {
   local rg
   rg="$(terraform -chdir="$STACK_DIR" output -raw resource_group_name 2>/dev/null || echo "mpetitRG")"
-  CLUSTER_NAME="$(read_output cluster_name)"
+  CLUSTER_NAME="$(read_output cluster_name || true)"
   [ -n "$CLUSTER_NAME" ] || die "cluster_name is empty. Run: make apply STACK=kubernetes"
 
   az aks get-credentials --resource-group "$rg" --name "$CLUSTER_NAME" --overwrite-existing >/dev/null
@@ -64,6 +64,7 @@ verify_access() {
 
 main() {
   step "Configuring kubectl"
+  load_env
   require_azure_session
   install_kubelogin
   fetch_credentials

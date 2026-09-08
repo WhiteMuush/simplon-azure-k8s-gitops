@@ -34,6 +34,12 @@ show_resource_group() {
 
 show_stacks() {
   step "Stacks"
+  # Reading a remote state needs the backend credentials.
+  if [ -f "$ENV_FILE" ]; then
+    load_env
+  else
+    warn "no .env at the project root, stack states are unreadable"
+  fi
   local stack
   while read -r stack; do
     show_stack "$stack"
