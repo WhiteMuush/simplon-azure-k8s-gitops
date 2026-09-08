@@ -7,7 +7,7 @@ spec:
   project: default
   source:
     repoURL: https://gitlab.com/WhiteMuush/simplon-azure-k8s-gitops.git
-    targetRevision: feat/setup-k8s
+    targetRevision: main
     path: manifests/argocd/apps
   destination:
     server: https://kubernetes.default.svc

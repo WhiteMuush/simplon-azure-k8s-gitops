@@ -5,8 +5,8 @@
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 # One colour per section. Unlisted sections fall back to DEFAULT_COLOR.
-SECTION_COLORS="Terraform=35;Kubernetes=34;Backup=33;General=36"
-DEFAULT_COLOR="36"
+SECTION_COLORS="Terraform=38;5;170,Kubernetes=38;5;39,ArgoCD=38;5;208,Backup=38;5;220,General=38;5;80"
+DEFAULT_COLOR="38;5;80"
 
 # Sections follow the include order of the Makefile, not the alphabet.
 makefiles() {
@@ -18,7 +18,7 @@ makefiles() {
 print_targets() {
   awk -v colors="$SECTION_COLORS" -v fallback="$DEFAULT_COLOR" '
     BEGIN {
-      split(colors, pairs, ";")
+      split(colors, pairs, ",")
       for (i in pairs) {
         split(pairs[i], kv, "=")
         color[kv[1]] = kv[2]
