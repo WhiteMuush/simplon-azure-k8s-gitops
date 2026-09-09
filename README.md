@@ -1,9 +1,12 @@
 # simplon-azure-k8s-gitops
 
-Azure infrastructure provisioned with Terraform, deployed from Git.
+Azure infrastructure provisioned with Terraform, deployed from Git: an AKS
+cluster running PostgreSQL, an SMB file share for employees, and nightly
+backups to blob storage. No credential is stored in Git or in the cluster.
 
 ## Documentation
 
+- [Infrastructure overview](https://gitlab.com/WhiteMuush/simplon-azure-k8s-gitops/-/wikis/Infrastructure-overview), what the stacks own and what deploys what
 - [Project brief](docs/CONSIGNES.md)
 - [Wiki](https://gitlab.com/WhiteMuush/simplon-azure-k8s-gitops/-/wikis/home), for architecture decisions and operating procedures
 
@@ -18,36 +21,38 @@ Each system authenticates differently:
 
 ## Backing up the cluster
 
-Velero backs the `demo` namespace up to a blob container every night, with no
-credential stored in the cluster. See
+Velero backs the `demo` and `database` namespaces up to a blob container every
+night, with no credential stored in the cluster. See
 [Backing up the cluster](https://gitlab.com/WhiteMuush/simplon-azure-k8s-gitops/-/wikis/Backing-up-the-cluster).
+
+## Requirements
+
+`terraform`, `az`, `kubectl`, `helm`, `make`. Sign in with `az login`, then copy
+`.env.example` to `.env` and fill it in. It is git-ignored and every script
+sources it.
 
 ## Usage
 
+`make help` lists every target. The ones worth knowing:
+
 ```bash
-make help              # every target, grouped by domain
-
-make plan              # init, format, validate, then plan
-make apply             # same, then apply
-make apply STACK=<name># target a specific stack
-make status            # what is deployed, per stack and in Azure
-
-make kubeconfig        # cluster access through Entra ID
-make wake              # bring the nodes back once they are deallocated
-make db-secret         # generate the database password in the Key Vault
-make db-wire           # write the database identity into the manifests
-make db-shell          # psql session on the database pod
-make argocd-ui         # port-forward the Argo CD UI and print the login
-make velero-install    # Velero and the daily schedule
-make velero-restore    # delete the demo namespace and restore it
+make apply STACK=<name>  # init, format, validate, then apply one stack
+make status              # what is deployed, per stack and in Azure
+make kubeconfig          # cluster access through Entra ID
+make db-shell            # psql session on the database pod
+make argocd-ui           # port-forward the Argo CD UI and print the login
+make velero-restore      # delete the demo namespace and restore it
 ```
 
-Credentials come from a `.env` file at the repository root, which is git-ignored.
+Stacks read each other through `terraform_remote_state`, so the order is not
+free: `cicd`, then `identity`, then `storage`, then `kubernetes`. Applying out
+of order fails on an output that does not exist yet.
 
 ## Deploying from the pipeline
 
-The same scripts run in GitLab CI on `main`, so nothing has to be installed from
-a workstation:
+The same scripts run in GitLab CI on `main`, so the platform needs no
+workstation. Only `cicd` and `identity` are applied by hand: they need
+directory rights the pipeline does not have.
 
 | Job | What it does |
 | --- | --- |
