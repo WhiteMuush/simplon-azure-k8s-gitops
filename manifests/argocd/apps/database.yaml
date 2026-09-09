@@ -14,6 +14,12 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: database
+  ignoreDifferences:
+    - group: apps
+      kind: StatefulSet
+      jsonPointers:
+        - /spec/volumeClaimTemplates/0/status
+        - /spec/volumeClaimTemplates/0/spec/volumeMode
   syncPolicy:
     automated:
       selfHeal: true
