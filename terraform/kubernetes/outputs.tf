@@ -38,3 +38,23 @@ output "velero_backup_container" {
   value       = data.terraform_remote_state.storage.outputs.velero_container_name
   description = "Blob container Velero writes backups to"
 }
+
+output "key_vault_name" {
+  value       = azurerm_key_vault.main.name
+  description = "Key Vault holding the database password"
+}
+
+output "tenant_id" {
+  value       = data.azurerm_client_config.current.tenant_id
+  description = "Tenant the Key Vault belongs to, referenced by the SecretProviderClass"
+}
+
+output "database_identity_client_id" {
+  value       = azurerm_user_assigned_identity.database.client_id
+  description = "Client ID annotated on the database service account"
+}
+
+output "database_secret_name" {
+  value       = var.database_secret_name
+  description = "Key Vault secret the database reads its password from"
+}
