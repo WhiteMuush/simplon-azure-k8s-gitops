@@ -77,3 +77,33 @@ variable "velero_service_account" {
   type        = string
   default     = "velero"
 }
+
+variable "key_vault_name" {
+  description = "Key Vault holding the database password. The name is globally unique."
+  type        = string
+  default     = "mpetit-kv-prod2026"
+}
+
+variable "database_identity_name" {
+  description = "User assigned identity PostgreSQL uses to read its password."
+  type        = string
+  default     = "database"
+}
+
+variable "database_namespace" {
+  description = "Namespace the database runs in."
+  type        = string
+  default     = "database"
+}
+
+variable "database_service_account" {
+  description = "Service account the database runs as, federated to the identity."
+  type        = string
+  default     = "postgres"
+}
+
+variable "database_secret_name" {
+  description = "Name of the Key Vault secret holding the PostgreSQL password."
+  type        = string
+  default     = "postgres-password"
+}
