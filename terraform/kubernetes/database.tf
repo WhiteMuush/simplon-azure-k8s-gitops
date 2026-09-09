@@ -16,7 +16,7 @@ resource "azurerm_key_vault" "main" {
 resource "azurerm_role_assignment" "key_vault_officer" {
   scope                = azurerm_key_vault.main.id
   role_definition_name = "Key Vault Secrets Officer"
-  principal_id         = azuread_group.aks_admins.object_id
+  principal_id         = local.aks_admin_group_object_id
 }
 
 resource "azurerm_user_assigned_identity" "database" {

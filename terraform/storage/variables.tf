@@ -26,12 +26,6 @@ variable "storage_account_name" {
   }
 }
 
-variable "file_share_group_name" {
-  description = "Entra ID group whose members get read and write access to the shares."
-  type        = string
-  default     = "file-share-users"
-}
-
 variable "tags" {
   description = "Tags applied to every resource."
   type        = map(string)

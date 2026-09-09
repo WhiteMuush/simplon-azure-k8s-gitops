@@ -20,7 +20,7 @@ output "kubeconfig_command" {
 }
 
 output "aks_admin_group_object_id" {
-  value       = azuread_group.aks_admins.object_id
+  value       = local.aks_admin_group_object_id
   description = "Object ID of the Entra ID group holding cluster administrators"
 }
 

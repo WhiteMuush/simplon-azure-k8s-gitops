@@ -9,7 +9,7 @@ output "storage_account_name" {
 }
 
 output "file_share_group_object_id" {
-  value       = azuread_group.file_share_users.object_id
+  value       = data.terraform_remote_state.identity.outputs.file_share_group_object_id
   description = "Object ID of the Entra ID group allowed to mount the shares"
 }
 

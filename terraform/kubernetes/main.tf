@@ -1,15 +1,20 @@
+data "terraform_remote_state" "identity" {
+  backend = "http"
+
+  config = {
+    address = "https://gitlab.com/api/v4/projects/86169287/terraform/state/identity"
+  }
+}
+
+locals {
+  aks_admin_group_object_id = data.terraform_remote_state.identity.outputs.aks_admin_group_object_id
+}
+
 data "azurerm_resource_group" "main" {
   name = var.resource_group_name
 }
 
 data "azurerm_client_config" "current" {}
-
-resource "azuread_group" "aks_admins" {
-  display_name     = var.aks_admin_group_name
-  description      = "Administrators of the ${var.cluster_name} AKS cluster."
-  security_enabled = true
-  members          = var.aks_admin_object_ids
-}
 
 resource "azurerm_kubernetes_cluster" "main" {
   name                = var.cluster_name
@@ -28,7 +33,7 @@ resource "azurerm_kubernetes_cluster" "main" {
   azure_active_directory_role_based_access_control {
     azure_rbac_enabled     = true
     tenant_id              = data.azurerm_client_config.current.tenant_id
-    admin_group_object_ids = [azuread_group.aks_admins.object_id]
+    admin_group_object_ids = [local.aks_admin_group_object_id]
   }
 
   node_provisioning_profile {
