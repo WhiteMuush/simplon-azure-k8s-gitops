@@ -121,7 +121,8 @@ outputs:
     HELM_VERSION: v3.19.0
   needs: ["outputs"]
   before_script:
-    - command -v bash >/dev/null || tdnf install -y bash || apk add --no-cache bash
+    # The azure-cli image ships neither tar nor git, both needed by the helm installer.
+    - tdnf install -y tar git bash || apk add --no-cache tar git bash || (apt-get update && apt-get install -y tar git bash)
     - az aks install-cli
     - curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | DESIRED_VERSION="$HELM_VERSION" bash
     - az login --service-principal --username "$ARM_CLIENT_ID" --tenant "$ARM_TENANT_ID" --federated-token "$GITLAB_OIDC_TOKEN" --output none
