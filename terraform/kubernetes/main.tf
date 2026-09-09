@@ -4,13 +4,11 @@ data "azurerm_resource_group" "main" {
 
 data "azurerm_client_config" "current" {}
 
-data "azuread_client_config" "current" {}
-
 resource "azuread_group" "aks_admins" {
   display_name     = var.aks_admin_group_name
   description      = "Administrators of the ${var.cluster_name} AKS cluster."
   security_enabled = true
-  members          = [data.azuread_client_config.current.object_id]
+  members          = var.aks_admin_object_ids
 }
 
 resource "azurerm_kubernetes_cluster" "main" {
