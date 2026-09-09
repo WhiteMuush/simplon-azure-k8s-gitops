@@ -56,6 +56,9 @@ resolve_stack() {
 }
 
 load_env() {
+  # In CI the same variables come from the pipeline, and .env is never committed.
+  [ -z "${CI:-}" ] || return 0
+
   [ -f "$ENV_FILE" ] ||
     die "Missing .env at the project root. See docs/RUNBOOK.md."
   set -a

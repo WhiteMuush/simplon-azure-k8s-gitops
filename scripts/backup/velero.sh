@@ -23,9 +23,21 @@ read_output() {
 
 require_tools() {
   local tool
-  for tool in helm kubectl terraform; do
+  for tool in helm kubectl; do
     command -v "$tool" >/dev/null || die "${tool} is missing."
   done
+}
+
+# The pipeline reads the value from the Terraform state once and exports it, so
+# the deploy job needs no Terraform binary and no state credentials.
+resolve_client_id() {
+  if [ -n "${VELERO_IDENTITY_CLIENT_ID:-}" ]; then
+    echo "$VELERO_IDENTITY_CLIENT_ID"
+    return
+  fi
+  command -v terraform >/dev/null ||
+    die "terraform is missing. Set VELERO_IDENTITY_CLIENT_ID to skip it."
+  read_output velero_identity_client_id
 }
 
 require_cluster() {
@@ -46,7 +58,7 @@ install() {
   add_helm_repo
 
   local client_id
-  client_id="$(read_output velero_identity_client_id)"
+  client_id="$(resolve_client_id)"
   [ -n "$client_id" ] ||
     die "velero_identity_client_id is empty. Run: make apply STACK=kubernetes"
 

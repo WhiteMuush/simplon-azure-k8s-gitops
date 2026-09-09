@@ -17,3 +17,8 @@ output "federated_subject" {
   value       = azuread_application_federated_identity_credential.default_branch.subject
   description = "Subject Entra ID expects in the GitLab OIDC token"
 }
+
+output "service_principal_object_id" {
+  value       = azuread_service_principal.gitlab.object_id
+  description = "Object ID of the pipeline service principal, granted RBAC on the cluster"
+}

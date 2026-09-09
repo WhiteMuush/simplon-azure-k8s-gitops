@@ -42,6 +42,23 @@ make velero-restore    # delete the demo namespace and restore it
 
 Credentials come from a `.env` file at the repository root, which is git-ignored.
 
+## Deploying from the pipeline
+
+The same scripts run in GitLab CI on `main`, so nothing has to be installed from
+a workstation:
+
+| Job | What it does |
+| --- | --- |
+| `outputs` | reads the cluster name and the Velero identity from the Terraform state |
+| `deploy:argocd` | `helm upgrade --install` of Argo CD, then applies the root application |
+| `deploy:velero` | `helm upgrade --install` of Velero, then applies the backup schedule |
+
+Both deploy jobs are manual. They authenticate with the same OIDC token as
+Terraform: `az login --federated-token`, then `kubelogin` converts the kubeconfig,
+because the cluster has local accounts disabled. The pipeline service principal
+holds `Azure Kubernetes Service Cluster User Role` and
+`Azure Kubernetes Service RBAC Cluster Admin`, scoped to the cluster only.
+
 ## Layout
 
 ```
