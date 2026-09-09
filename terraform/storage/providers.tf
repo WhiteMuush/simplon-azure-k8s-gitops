@@ -6,5 +6,3 @@ provider "azurerm" {
   # Required because the account key is disabled.
   storage_use_azuread = true
 }
-
-provider "azuread" {}
