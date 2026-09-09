@@ -58,3 +58,8 @@ output "database_secret_name" {
   value       = var.database_secret_name
   description = "Key Vault secret the database reads its password from"
 }
+
+output "resource_group_name" {
+  value       = data.azurerm_resource_group.main.name
+  description = "Resource group holding the cluster, read by the deploy jobs"
+}

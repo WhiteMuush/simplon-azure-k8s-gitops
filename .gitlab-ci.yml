@@ -2,6 +2,7 @@ stages:
   - validate
   - plan
   - apply
+  - deploy
 
 variables:
   TF_HTTP_USERNAME: gitlab-ci-token
@@ -88,3 +89,64 @@ apply:kubernetes:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
       when: manual
     - when: never
+
+# Reads the cluster coordinates from the state so the deploy jobs need neither a
+# Terraform binary nor hardcoded names.
+outputs:
+  extends: .terraform
+  stage: deploy
+  variables:
+    STACK: kubernetes
+  script:
+    - |
+      {
+        echo "AKS_CLUSTER_NAME=$(terraform output -raw cluster_name)"
+        echo "AKS_RESOURCE_GROUP=$(terraform output -raw resource_group_name)"
+        echo "VELERO_IDENTITY_CLIENT_ID=$(terraform output -raw velero_identity_client_id)"
+      } > "$CI_PROJECT_DIR/cluster.env"
+  artifacts:
+    reports:
+      dotenv: cluster.env
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - when: never
+
+# Local accounts are disabled on the cluster, so kubectl authenticates through
+# Entra ID: the same OIDC token as Terraform, converted by kubelogin.
+.kubernetes:
+  extends: .azure_oidc
+  image: mcr.microsoft.com/azure-cli:latest
+  interruptible: true
+  variables:
+    HELM_VERSION: v3.19.0
+  needs: ["outputs"]
+  before_script:
+    - command -v bash >/dev/null || tdnf install -y bash || apk add --no-cache bash
+    - az aks install-cli
+    - curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | DESIRED_VERSION="$HELM_VERSION" bash
+    - az login --service-principal --username "$ARM_CLIENT_ID" --tenant "$ARM_TENANT_ID" --federated-token "$GITLAB_OIDC_TOKEN" --output none
+    - az account set --subscription "$ARM_SUBSCRIPTION_ID"
+    - az aks get-credentials --resource-group "$AKS_RESOURCE_GROUP" --name "$AKS_CLUSTER_NAME" --overwrite-existing
+    - kubelogin convert-kubeconfig -l azurecli
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual
+    - when: never
+
+deploy:argocd:
+  extends: .kubernetes
+  stage: deploy
+  environment:
+    name: production/argocd
+  script:
+    - bash scripts/kubernetes/argocd.sh install
+    - bash scripts/kubernetes/argocd.sh status
+
+deploy:velero:
+  extends: .kubernetes
+  stage: deploy
+  environment:
+    name: production/velero
+  script:
+    - bash scripts/backup/velero.sh install
+    - bash scripts/backup/velero.sh status
