@@ -77,7 +77,7 @@ apply:storage:
 apply:kubernetes:
   extends: .terraform
   stage: apply
-  needs: ["apply:storage"]
+  needs: ["plan", "apply:storage"]
   variables:
     STACK: kubernetes
   environment:
