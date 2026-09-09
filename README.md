@@ -33,6 +33,7 @@ make apply STACK=<name># target a specific stack
 make status            # what is deployed, per stack and in Azure
 
 make kubeconfig        # cluster access through Entra ID
+make wake              # bring the nodes back once they are deallocated
 make velero-install    # Velero and the daily schedule
 make velero-restore    # delete the demo namespace and restore it
 ```
