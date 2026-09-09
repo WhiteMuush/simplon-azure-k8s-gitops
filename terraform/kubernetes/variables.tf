@@ -39,6 +39,12 @@ variable "node_zones" {
   default     = ["1", "2"]
 }
 
+variable "aks_admin_object_ids" {
+  description = "Entra ID object IDs made members of the cluster administrator group. Pinned so a pipeline run cannot replace the membership with its own identity."
+  type        = list(string)
+  default     = ["a8530703-e121-4db0-a7ec-3fd78c1d7205"]
+}
+
 variable "aks_admin_group_name" {
   description = "Entra ID group whose members are cluster administrators."
   type        = string
