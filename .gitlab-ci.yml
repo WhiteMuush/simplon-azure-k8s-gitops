@@ -1,0 +1,90 @@
+stages:
+  - validate
+  - plan
+  - apply
+
+variables:
+  TF_HTTP_USERNAME: gitlab-ci-token
+  TF_HTTP_PASSWORD: $CI_JOB_TOKEN
+  ARM_USE_OIDC: "true"
+  ARM_OIDC_TOKEN: $GITLAB_OIDC_TOKEN
+  TF_VAR_subscription_id: $ARM_SUBSCRIPTION_ID
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+
+.azure_oidc:
+  id_tokens:
+    GITLAB_OIDC_TOKEN:
+      aud: api://AzureADTokenExchange
+
+.terraform:
+  extends: .azure_oidc
+  image:
+    name: hashicorp/terraform:1.14
+    entrypoint: [""]
+  interruptible: true
+  before_script:
+    - cd "terraform/${STACK}"
+    - terraform init -input=false
+
+validate:
+  extends: .terraform
+  stage: validate
+  parallel:
+    matrix:
+      - STACK: [storage, kubernetes]
+  script:
+    - terraform fmt -check -recursive
+    - terraform validate
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH
+
+plan:
+  extends: .terraform
+  stage: plan
+  needs: ["validate"]
+  parallel:
+    matrix:
+      - STACK: [storage, kubernetes]
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - when: never
+  script:
+    - terraform plan -out=plan.tfplan
+    - terraform show -no-color plan.tfplan > plan.txt
+  artifacts:
+    paths:
+      - terraform/${STACK}/plan.tfplan
+      - terraform/${STACK}/plan.txt
+    expire_in: 7 days
+
+apply:storage:
+  extends: .terraform
+  stage: apply
+  needs: ["plan"]
+  variables:
+    STACK: storage
+  environment:
+    name: production/storage
+  script:
+    - terraform apply -auto-approve plan.tfplan
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual
+    - when: never
+
+apply:kubernetes:
+  extends: .terraform
+  stage: apply
+  needs: ["apply:storage"]
+  variables:
+    STACK: kubernetes
+  environment:
+    name: production/kubernetes
+  script:
+    - terraform apply -auto-approve plan.tfplan
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual
+    - when: never
