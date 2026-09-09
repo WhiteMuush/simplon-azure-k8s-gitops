@@ -121,10 +121,16 @@ outputs:
     HELM_VERSION: v3.19.0
   needs: ["outputs"]
   before_script:
-    # The azure-cli image ships neither tar nor git, both needed by the helm installer.
-    - tdnf install -y tar git bash || apk add --no-cache tar git bash || (apt-get update && apt-get install -y tar git bash)
+    # The azure-cli image is minimal and get-helm-3 wants tar, git and awk, so the
+    # tarball is fetched straight from get.helm.sh instead. Its checksum is
+    # compared with Python, which the image already carries for az itself.
+    - tdnf install -y tar || apk add --no-cache tar || (apt-get update && apt-get install -y tar)
     - az aks install-cli
-    - curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | DESIRED_VERSION="$HELM_VERSION" bash
+    - curl -fsSL -o /tmp/helm.tgz "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz"
+    - curl -fsSL -o /tmp/helm.sha256 "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz.sha256sum"
+    - python3 -c "import hashlib,sys; got=hashlib.sha256(open('/tmp/helm.tgz','rb').read()).hexdigest(); want=open('/tmp/helm.sha256').read().split()[0]; sys.exit(0 if got==want else 'helm checksum mismatch')"
+    - tar -xzf /tmp/helm.tgz -C /tmp
+    - mv /tmp/linux-amd64/helm /usr/local/bin/helm && chmod 0755 /usr/local/bin/helm
     - az login --service-principal --username "$ARM_CLIENT_ID" --tenant "$ARM_TENANT_ID" --federated-token "$GITLAB_OIDC_TOKEN" --output none
     - az account set --subscription "$ARM_SUBSCRIPTION_ID"
     - az aks get-credentials --resource-group "$AKS_RESOURCE_GROUP" --name "$AKS_CLUSTER_NAME" --overwrite-existing
