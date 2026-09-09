@@ -4,10 +4,11 @@ metadata:
   name: daily-demo
   namespace: velero
 spec:
-  schedule: "0 2 * * *"
+  schedule: "30 12 * * *"
   useOwnerReferencesInBackup: false
   template:
     includedNamespaces:
       - demo
+      - database
     defaultVolumesToFsBackup: true
     ttl: 168h
