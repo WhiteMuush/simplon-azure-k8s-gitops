@@ -36,6 +36,8 @@ make kubeconfig        # cluster access through Entra ID
 make wake              # bring the nodes back once they are deallocated
 make db-secret         # generate the database password in the Key Vault
 make db-wire           # write the database identity into the manifests
+make db-shell          # psql session on the database pod
+make argocd-ui         # port-forward the Argo CD UI and print the login
 make velero-install    # Velero and the daily schedule
 make velero-restore    # delete the demo namespace and restore it
 ```
